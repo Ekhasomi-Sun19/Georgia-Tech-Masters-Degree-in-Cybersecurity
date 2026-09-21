@@ -1,1 +1,16 @@
 
+Item	What it is
+pd	the alias for the pandas library (from import pandas as pd)
+pd.DataFrame	a pandas class — the core 2D table data structure
+pd.Series	a pandas class — a single labeled column/array
+.dtype	a pandas/NumPy attribute on a Series (returns an np.dtype, which is a NumPy type, but the attribute itself lives on the pandas Series object)
+.set_index()	a pandas method, defined on the DataFrame class
+.reset_index()	a pandas method, defined on the DataFrame class
+A quick distinction worth internalizing:
+
+Library = pandas (pd) — the whole package you imported.
+Class = DataFrame / Series — data structures defined within that library.
+Method = .set_index(), .reset_index(), .sample(), etc. — functions that belong to those classes, called on an instance (e.g., dataset.reset_index()), as opposed to standalone functions you'd call like pd.some_function(dataset).
+The one exception in this whole task set is np.dtype — that's a NumPy class (NumPy is pandas' underlying numerical library), but you never construct it manually; pandas hands it to you automatically via .dtype.
+
+So going forward in Task 1, essentially every method you'll call (.astype(), .sort_values(), .dropna(), .merge(), etc.) will be a pandas DataFrame/Series method, same pattern as what you've seen so far.
