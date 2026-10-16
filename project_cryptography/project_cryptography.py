@@ -7,37 +7,58 @@ import math
 import string
 
 def vigenere_decrypt_cipher(c: str, keyword: str) -> str:
-    # TODO: Write the necessary code to get the message (m) from the cipher (c) using the keyword
+    c = ''.join(ch for ch in c.upper() if ch in string.ascii_uppercase)
+    keyword = keyword.upper()
     m = ''
+    for i, ch in enumerate(c):
+        shift = ord(keyword[i % len(keyword)]) - ord('A')
+        m += chr((ord(ch) - ord('A') - shift) % 26 + ord('A'))
     return m
 
 def vigenere_encrypt_message(m: str, keyword: str) -> str:
-    # TODO: Write the necessary code to create a Vigenere cipher (c) of the message (m) using the provided keyword
+    m = ''.join(ch for ch in m.upper() if ch in string.ascii_uppercase)
+    keyword = keyword.upper()
     c = ''
+    for i, ch in enumerate(m):
+        shift = ord(keyword[i % len(keyword)]) - ord('A')
+        c += chr((ord(ch) - ord('A') + shift) % 26 + ord('A'))
     return c
 
 def vigenere_dictionary_attack(c: str) -> str:
-    # TODO: Write the necessary code to get the message (m) from the cipher (c)
     m = ''
+    words = set(DICTIONARY)
+    longest = max(len(w) for w in words)
+    for key in DICTIONARY:
+        candidate = vigenere_decrypt_cipher(c, key)
+        n = len(candidate)
+        can_split = [False] * (n + 1)
+        can_split[0] = True
+        for end in range(1, n + 1):
+            for start in range(max(0, end - longest), end):
+                if can_split[start] and candidate[start:end] in words:
+                    can_split[end] = True
+                    break
+        if can_split[n]:
+            m = candidate
+            break
     return m
 
 def rsa_decrypt_cipher(n: int, d: int, c: int) -> int:
     m = 0
-    # TODO: Write the necessary code to get the message (m) from the cipher (c)
+    m = pow(c, d, n)
 
     return m
 
 def rsa_encrypt_message(m: int, e: int, n: int) -> int:
     c = 0
-    # TODO: Write the necessary code to get the cipher (c) from the message (m)
+    c = pow(m, e, n)
 
     return c
 
 def rsa_calculate_private_key(e: int, p: int, q: int) -> int:
     d = 0
-
-    # TODO: Write the necessary code to get the private key d from
-    # the public exponent e and the factors p and q
+    phi = (p - 1) * (q - 1)
+    d = pow(e, -1, phi)
 
     return d
 
@@ -66,25 +87,46 @@ def rsa_factor_64_bit_key() -> typing.Dict[str, typing.Dict[str, int]]:
     }
 
 def rsa_weak_key_attack(given_public_key_N: int, given_public_key_e: int, public_key_list: typing.List[int]) -> int:
-    # TODO: Write the necessary code to retrieve the private key d from the given public
-    # key (N, e) using only the list of public keys generated using the same flawed RNG
     d = 0
+    for other_N in public_key_list:
+        p = math.gcd(given_public_key_N, other_N)
+        if 1 < p < given_public_key_N:
+            q = given_public_key_N // p
+            phi = (p - 1) * (q - 1)
+            d = pow(given_public_key_e, -1, phi)
+            break
 
     return d
 
 def rsa_broadcast_attack(N_1: int, c_1: int, N_2: int, c_2: int, N_3: int, c_3: int) -> int:
-    # TODO: Write the necessary code to retrieve the decrypted message (m) using three different
-    # ciphers (c_1, c_2, and c_3) created using three different public key N's (N_1, N_2, and N_3)
     m = 0
+    N = N_1 * N_2 * N_3
+    m_cubed = 0
+    for N_i, c_i in ((N_1, c_1), (N_2, c_2), (N_3, c_3)):
+        M_i = N // N_i
+        m_cubed += c_i * M_i * pow(M_i, -1, N_i)
+    m_cubed %= N
 
+    low, high = 0, 1 << (m_cubed.bit_length() // 3 + 1)
+    while low < high:
+        mid = (low + high) // 2
+        if mid ** 3 < m_cubed:
+            low = mid + 1
+        else:
+            high = mid
+    m = low
     return m
 
 def rsa_parity_oracle_attack(c: int, N: int, e: int, oracle: typing.Callable[[int], bool]) -> str:
-    # TODO: Write the necessary code to get the plaintext message from the cipher (c) using
-    # the public key (N, e) and an oracle function - oracle(chosen_c) that will give you
-    # the parity of the decrypted value of a chosen cipher (chosen_c) value using the hidden private key (d)
-
-    m_int = 42
+    multiplier = pow(2, e, N)
+    lower, upper = 0, N
+    for _ in range(N.bit_length()):
+        c = (c * multiplier) % N
+        if oracle(c):
+            lower, upper = 2 * lower, lower + upper
+        else:
+            lower, upper = lower + upper, 2 * upper
+    m_int = upper >> N.bit_length()
 
     # Transform the integer value of the message into a human readable form
     message = bytes.fromhex(hex(int(m_int)).rstrip('L')[2:]).decode('utf-8')
@@ -92,35 +134,36 @@ def rsa_parity_oracle_attack(c: int, N: int, e: int, oracle: typing.Callable[[in
     return message
 
 def cbc_decrypt_128(key: bytes, IV: bytes, c: bytes) -> str:
-    # TODO: Write the necessary code to decrypt the cipher
-    # (c) using the provided key and IV
     from Crypto import Random
     from Crypto.Cipher import AES
     from base64 import b64encode, b64decode
     # Do NOT modify the imports above this line
 
-    m = 0
+    cipher = AES.new(key, AES.MODE_CBC, IV)
+    padded = cipher.decrypt(c)
+    m = padded.rstrip(b'\x00').decode('utf-8')
 
     return m
 
 def cbc_encrypt_128(key: bytes, IV: bytes, m: str) -> int:
-    # TODO: Write the necessary code to encrypt the message
-    # (m) using the provided key and IV
-    # the necessary block length is 128 bit
-    # pad with the byte '\x00'
     from Crypto import Random
     from Crypto.Cipher import AES
     from base64 import b64encode, b64decode
     # Do NOT modify the imports above this line
 
-    c = 0
+    data = m.encode('utf-8')
+    data += b'\x00' * (-len(data) % AES.block_size)
+    cipher = AES.new(key, AES.MODE_CBC, IV)
+    c = cipher.encrypt(data)
 
     return b64encode(c).decode('utf-8')
 
 def cbc_pkcs_padding(padding) -> bool:
-    # TODO: Write the necessary code to check
-    # if the padding matches PKCS standards
-    is_pkcs_padded = 'This variable should be a bool value'
+    is_pkcs_padded = False
+    if len(padding) > 0:
+        pad_len = padding[-1]
+        if 1 <= pad_len <= len(padding):
+            is_pkcs_padded = padding[-pad_len:] == bytes([pad_len]) * pad_len
 
     return is_pkcs_padded
 

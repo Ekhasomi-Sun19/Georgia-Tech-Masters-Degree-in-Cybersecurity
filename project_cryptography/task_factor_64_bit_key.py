@@ -1,6 +1,8 @@
 import hashlib
 import json
 import typing
+import math
+import random
 
 
 ##############################################
@@ -30,10 +32,24 @@ def print_tests_for_student_id() -> None:
 def rsa_factor_64_bit_key(N: int, e: int) -> typing.Tuple[int, int]:
     p = 0
     q = 0
-    # TODO: Write the necessary code to get the factors p and q of the public key (N, e)
+    if N % 2 == 0:
+        return 2, N // 2
+    while p == 0 or p == N:
+        c = random.randrange(1, N)
+        x = y = random.randrange(2, N)
+        p = 1
+        while p == 1:
+            x = (x * x + c) % N
+            y = (y * y + c) % N
+            y = (y * y + c) % N
+            p = math.gcd(abs(x - y), N)
+    q = N // p
 
     return p, q
 
 
 if __name__ == '__main__':
     print_tests_for_student_id()
+    tests = json.load(open('student_tests.json'))[hashlib.sha256(STUDENT_ID.encode()).hexdigest()]
+    for test_id, test in tests.items():
+        print(test_id, test)
